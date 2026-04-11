@@ -1,0 +1,49 @@
+# Copy this file to terraform/terraform.tfvars and fill in your values.
+# Do NOT commit terraform.tfvars — it's in .gitignore.
+
+aws_region   = "eu-north-1"
+project_name = "amnezia-vpn"
+
+# --- Required ---
+ssh_key_name      = "my-vpn-keypair"
+admin_cidr_blocks = ["YOUR_IP/32"]
+
+# --- Scaling ---
+server_count      = 1
+clients_per_server = 50
+
+# --- Instance ---
+instance_type = "t3.medium"
+# ami_id      = ""  # Leave empty to auto-select Ubuntu 22.04
+
+# --- Networking ---
+vpc_cidr    = "10.0.0.0/16"
+subnet_cidr = "10.0.1.0/24"
+vpn_subnet  = "10.8.0.0/24"
+vpn_port    = 443
+
+# --- S3 ---
+# config_bucket_name = ""  # Leave empty to auto-generate
+
+# --- IP Rotation ---
+ip_rotation_schedule = "cron(0 3 * * ? *)"
+
+# --- AmneziaWG Obfuscation ---
+awg_jc   = 4
+awg_jmin = 40
+awg_jmax = 70
+awg_s1   = 0
+awg_s2   = 0
+awg_h1   = 1
+awg_h2   = 2
+awg_h3   = 3
+awg_h4   = 4
+
+# --- DNS ---
+dns_servers = "1.1.1.1, 1.0.0.1"
+
+# --- Extra tags ---
+# tags = {
+#   Environment = "production"
+#   Team        = "infra"
+# }

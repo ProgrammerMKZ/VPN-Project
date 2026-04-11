@@ -1,0 +1,31 @@
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfplan
+terraform/terraform.tfvars
+terraform/.terraform.tfstate.lock.info
+
+# Lambda build artifacts
+lambda/*.zip
+lambda/__pycache__/
+
+# Keys and secrets
+*.key
+*.pem
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+*.tmp
