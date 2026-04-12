@@ -29,3 +29,28 @@ Thumbs.db
 # Temporary files
 tmp/
 *.tmp
+
+# Xcode
+AmneziaVPN/**/*.xcodeproj/xcuserdata/
+AmneziaVPN/**/*.xcworkspace/xcuserdata/
+AmneziaVPN/**/xcuserdata/
+AmneziaVPN/DerivedData/
+AmneziaVPN/build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+AmneziaVPN/.build/
+AmneziaVPN/.swiftpm/
+AmneziaVPN/Packages/
+
+# CocoaPods (if ever used)
+AmneziaVPN/Pods/
