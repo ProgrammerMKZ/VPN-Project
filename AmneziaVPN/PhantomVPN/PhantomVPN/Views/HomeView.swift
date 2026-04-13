@@ -1,4 +1,5 @@
 import SwiftUI
+internal import UniformTypeIdentifiers
 
 struct HomeView: View {
     @EnvironmentObject var viewModel: VPNViewModel
@@ -30,7 +31,7 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 24)
             }
-            .navigationTitle("AmneziaVPN")
+            .navigationTitle("PhantomVPN")
             .iOSNavigationBarInline()
             .toolbar {
                 ToolbarItem(placement: .automatic) {
@@ -44,7 +45,7 @@ struct HomeView: View {
             }
             .fileImporter(
                 isPresented: $viewModel.isImporting,
-                allowedContentTypes: [.init(filenameExtension: "conf")!],
+                allowedContentTypes: [UTType(filenameExtension: "conf")].compactMap { $0 },
                 allowsMultipleSelection: false
             ) { result in
                 if case .success(let urls) = result, let url = urls.first {
@@ -62,12 +63,12 @@ struct HomeView: View {
                     .frame(width: 200, height: 200)
                     .scaleEffect(pulseAnimation ? 1.2 : 1.0)
                     .opacity(pulseAnimation ? 0.0 : 0.6)
+                    .onAppear { pulseAnimation = true }
+                    .onDisappear { pulseAnimation = false }
                     .animation(
                         .easeInOut(duration: 2.0).repeatForever(autoreverses: false),
                         value: pulseAnimation
                     )
-                    .onAppear { pulseAnimation = true }
-                    .onDisappear { pulseAnimation = false }
             }
 
             Circle()
@@ -79,23 +80,22 @@ struct HomeView: View {
                 .font(.system(size: 56, weight: .light))
                 .foregroundStyle(.white)
         }
-        .animation(.easeInOut(duration: 0.5), value: viewModel.connectionState)
     }
 
     private var orbGradient: LinearGradient {
         switch viewModel.connectionState {
         case .connected:
-            return LinearGradient(
+            LinearGradient(
                 colors: [Color.accentGreen, Color.accentGreen.opacity(0.7)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
         case .connecting, .reasserting:
-            return LinearGradient(
+            LinearGradient(
                 colors: [.orange, .yellow.opacity(0.7)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
         default:
-            return LinearGradient(
+            LinearGradient(
                 colors: [Color.subtleGray, Color.subtleGray.opacity(0.5)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
@@ -104,18 +104,18 @@ struct HomeView: View {
 
     private var orbShadowColor: Color {
         switch viewModel.connectionState {
-        case .connected: return .accentGreen
-        case .connecting, .reasserting: return .orange
-        default: return .clear
+        case .connected: .accentGreen
+        case .connecting, .reasserting: .orange
+        default: .clear
         }
     }
 
     private var orbIcon: String {
         switch viewModel.connectionState {
-        case .connected: return "lock.shield.fill"
-        case .connecting, .reasserting: return "arrow.triangle.2.circlepath"
-        case .disconnecting: return "xmark.shield"
-        default: return "shield.slash"
+        case .connected: "lock.shield.fill"
+        case .connecting, .reasserting: "arrow.triangle.2.circlepath"
+        case .disconnecting: "xmark.shield"
+        default: "shield.slash"
         }
     }
 
@@ -202,7 +202,9 @@ struct HomeView: View {
     }
 
     private var connectButton: some View {
-        Button(action: viewModel.toggleConnection) {
+        Button {
+            viewModel.toggleConnection()
+        } label: {
             HStack(spacing: 10) {
                 if viewModel.connectionState.isTransitioning {
                     ProgressView()
@@ -222,32 +224,33 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: buttonShadow.opacity(0.3), radius: 12, y: 6)
         }
-        .disabled(!viewModel.hasConfigs || viewModel.connectionState.isTransitioning)
+        .buttonStyle(.plain)
+        .disabled(viewModel.connectionState.isTransitioning)
         .opacity(viewModel.hasConfigs ? 1.0 : 0.5)
-        .animation(.easeInOut(duration: 0.3), value: viewModel.connectionState)
     }
 
     private var buttonTitle: String {
         switch viewModel.connectionState {
-        case .connected: return "Disconnect"
-        case .connecting: return "Connecting..."
-        case .disconnecting: return "Disconnecting..."
-        case .reasserting: return "Reconnecting..."
-        default: return "Connect"
+        case .connected: "Disconnect"
+        case .connecting: "Connecting..."
+        case .disconnecting: "Disconnecting..."
+        case .reasserting: "Reconnecting..."
+        default: "Connect"
         }
     }
 
     private var buttonGradient: LinearGradient {
         if viewModel.connectionState.isActive {
-            return LinearGradient(
+            LinearGradient(
                 colors: [.red.opacity(0.8), .red.opacity(0.6)],
                 startPoint: .leading, endPoint: .trailing
             )
+        } else {
+            LinearGradient(
+                colors: [Color.accentGreen, Color.accentGreen.opacity(0.8)],
+                startPoint: .leading, endPoint: .trailing
+            )
         }
-        return LinearGradient(
-            colors: [Color.accentGreen, Color.accentGreen.opacity(0.8)],
-            startPoint: .leading, endPoint: .trailing
-        )
     }
 
     private var buttonShadow: Color {

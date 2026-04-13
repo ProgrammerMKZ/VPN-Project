@@ -10,12 +10,13 @@ final class VPNViewModel: ObservableObject {
     @Published var errorMessage: String = ""
     @Published var isImporting: Bool = false
 
-    private let vpnManager = VPNManager.shared
+    let vpnManager = VPNManager.shared
     let configStore = ConfigStore.shared
     private var cancellables = Set<AnyCancellable>()
 
     init() {
         vpnManager.$state
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newState in
                 self?.connectionState = newState
@@ -24,10 +25,15 @@ final class VPNViewModel: ObservableObject {
 
         vpnManager.$stats
             .receive(on: DispatchQueue.main)
+            .throttle(for: .seconds(1), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] newStats in
                 self?.stats = newStats
             }
             .store(in: &cancellables)
+
+        Task {
+            await vpnManager.ensureLoaded()
+        }
     }
 
     var selectedConfig: AmneziaWGConfig? {

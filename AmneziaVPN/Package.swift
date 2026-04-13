@@ -11,9 +11,6 @@ let package = Package(
         .library(name: "AmneziaVPN", targets: ["AmneziaVPN"]),
         .library(name: "PacketTunnel", targets: ["PacketTunnel"]),
     ],
-    dependencies: [
-        .package(url: "https://github.com/nicklockwood/SwiftFormat", from: "0.54.0"),
-    ],
     targets: [
         .target(
             name: "AmneziaVPN",

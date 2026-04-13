@@ -1,4 +1,5 @@
 import SwiftUI
+internal import UniformTypeIdentifiers
 
 struct ServerListView: View {
     @EnvironmentObject var viewModel: VPNViewModel
