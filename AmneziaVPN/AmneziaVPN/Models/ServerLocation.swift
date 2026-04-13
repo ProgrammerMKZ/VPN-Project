@@ -16,32 +16,32 @@ struct ServerLocation: Identifiable, Hashable {
     }
 
     var latencyText: String {
-        guard let ms = latency else { return "—" }
-        return "\(ms) ms"
+        guard let ms = latency else { return "---" }
+        return "\(ms) MS"
     }
 
-    static func inferLocation(from endpoint: String) -> (name: String, flag: String) {
+    static func inferLocation(from endpoint: String) -> (name: String, code: String) {
         let host = endpoint.components(separatedBy: ":").first ?? endpoint
 
-        let regionMap: [(prefix: String, name: String, flag: String)] = [
-            ("eu-north", "Stockholm", "🇸🇪"),
-            ("eu-west-1", "Ireland", "🇮🇪"),
-            ("eu-west-2", "London", "🇬🇧"),
-            ("eu-central", "Frankfurt", "🇩🇪"),
-            ("us-east-1", "Virginia", "🇺🇸"),
-            ("us-east-2", "Ohio", "🇺🇸"),
-            ("us-west-1", "California", "🇺🇸"),
-            ("us-west-2", "Oregon", "🇺🇸"),
-            ("ap-northeast-1", "Tokyo", "🇯🇵"),
-            ("ap-southeast-1", "Singapore", "🇸🇬"),
+        let regionMap: [(prefix: String, name: String, code: String)] = [
+            ("eu-north", "STOCKHOLM", "SE"),
+            ("eu-west-1", "IRELAND", "IE"),
+            ("eu-west-2", "LONDON", "GB"),
+            ("eu-central", "FRANKFURT", "DE"),
+            ("us-east-1", "VIRGINIA", "US"),
+            ("us-east-2", "OHIO", "US"),
+            ("us-west-1", "CALIFORNIA", "US"),
+            ("us-west-2", "OREGON", "US"),
+            ("ap-northeast-1", "TOKYO", "JP"),
+            ("ap-southeast-1", "SINGAPORE", "SG"),
         ]
 
         for region in regionMap {
             if host.contains(region.prefix) {
-                return (region.name, region.flag)
+                return (region.name, region.code)
             }
         }
 
-        return ("Server \(host.prefix(12))", "🌍")
+        return ("NODE \(host.prefix(12).uppercased())", "--")
     }
 }

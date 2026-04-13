@@ -1,256 +1,177 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct HomeView: View {
     @EnvironmentObject var viewModel: VPNViewModel
-    @State private var pulseAnimation = false
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.darkBackground.ignoresSafeArea()
+        VStack(spacing: 0) {
+            header
+            divider
 
-                VStack(spacing: 32) {
-                    Spacer()
-
-                    connectionOrb
-
-                    statusLabel
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    statusBlock
+                    divider
+                    nodeBlock
+                    divider
 
                     if viewModel.connectionState == .connected {
-                        statsCard
-                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        sessionBlock
+                        divider
                     }
 
-                    Spacer()
-
-                    selectedServerCard
+                    Spacer(minLength: 24)
 
                     connectButton
-                        .padding(.bottom, 16)
-                }
-                .padding(.horizontal, 24)
-            }
-            .navigationTitle("AmneziaVPN")
-            .iOSNavigationBarInline()
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button {
-                        viewModel.isImporting = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 24)
                 }
             }
-            .fileImporter(
-                isPresented: $viewModel.isImporting,
-                allowedContentTypes: [.init(filenameExtension: "conf")!],
-                allowsMultipleSelection: false
-            ) { result in
-                if case .success(let urls) = result, let url = urls.first {
-                    viewModel.importConfig(from: url)
-                }
+        }
+        .background(Color.white)
+        .fileImporter(
+            isPresented: $viewModel.isImporting,
+            allowedContentTypes: [.init(filenameExtension: "conf")!],
+            allowsMultipleSelection: false
+        ) { result in
+            if case .success(let urls) = result, let url = urls.first {
+                viewModel.importConfig(from: url)
             }
         }
     }
 
-    private var connectionOrb: some View {
-        ZStack {
+    private var header: some View {
+        HStack {
+            Text("PHANTOM VPN")
+                .font(MaurtenFont.monoLabel)
+                .foregroundStyle(.black)
+
+            Spacer()
+
+            Button {
+                viewModel.isImporting = true
+            } label: {
+                Text("+ IMPORT")
+                    .font(MaurtenFont.monoSmall)
+                    .foregroundStyle(.black)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
+    }
+
+    private var statusBlock: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("STATUS")
+                    .font(MaurtenFont.monoLarge)
+                    .foregroundStyle(.black)
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 16)
+
+            specRow(label: "STATE", value: viewModel.connectionState.displayText)
+            specRow(label: "PROTOCOL", value: "AMNEZIAWG")
+
             if viewModel.connectionState == .connected {
-                Circle()
-                    .fill(Color.accentGreen.opacity(0.15))
-                    .frame(width: 200, height: 200)
-                    .scaleEffect(pulseAnimation ? 1.2 : 1.0)
-                    .opacity(pulseAnimation ? 0.0 : 0.6)
-                    .animation(
-                        .easeInOut(duration: 2.0).repeatForever(autoreverses: false),
-                        value: pulseAnimation
-                    )
-                    .onAppear { pulseAnimation = true }
-                    .onDisappear { pulseAnimation = false }
-            }
-
-            Circle()
-                .fill(orbGradient)
-                .frame(width: 160, height: 160)
-                .shadow(color: orbShadowColor.opacity(0.4), radius: 30, y: 8)
-
-            Image(systemName: orbIcon)
-                .font(.system(size: 56, weight: .light))
-                .foregroundStyle(.white)
-        }
-        .animation(.easeInOut(duration: 0.5), value: viewModel.connectionState)
-    }
-
-    private var orbGradient: LinearGradient {
-        switch viewModel.connectionState {
-        case .connected:
-            return LinearGradient(
-                colors: [Color.accentGreen, Color.accentGreen.opacity(0.7)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        case .connecting, .reasserting:
-            return LinearGradient(
-                colors: [.orange, .yellow.opacity(0.7)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        default:
-            return LinearGradient(
-                colors: [Color.subtleGray, Color.subtleGray.opacity(0.5)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        }
-    }
-
-    private var orbShadowColor: Color {
-        switch viewModel.connectionState {
-        case .connected: return .accentGreen
-        case .connecting, .reasserting: return .orange
-        default: return .clear
-        }
-    }
-
-    private var orbIcon: String {
-        switch viewModel.connectionState {
-        case .connected: return "lock.shield.fill"
-        case .connecting, .reasserting: return "arrow.triangle.2.circlepath"
-        case .disconnecting: return "xmark.shield"
-        default: return "shield.slash"
-        }
-    }
-
-    private var statusLabel: some View {
-        VStack(spacing: 6) {
-            Text(viewModel.connectionState.displayText)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.white)
-
-            if viewModel.connectionState == .connected, let config = viewModel.selectedConfig {
-                Text(config.peer.endpointHost)
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.5))
+                specRow(label: "DURATION", value: viewModel.stats.formattedDuration)
             }
         }
     }
 
-    private var statsCard: some View {
-        HStack(spacing: 24) {
-            statItem(title: "Duration", value: viewModel.stats.formattedDuration)
-            Divider().frame(height: 32).background(.white.opacity(0.1))
-            statItem(title: "Download", value: viewModel.stats.formattedBytesReceived)
-            Divider().frame(height: 32).background(.white.opacity(0.1))
-            statItem(title: "Upload", value: viewModel.stats.formattedBytesSent)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-        .background(Color.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-
-    private func statItem(title: String, value: String) -> some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.4))
-                .textCase(.uppercase)
-            Text(value)
-                .font(.subheadline.monospacedDigit().weight(.medium))
-                .foregroundStyle(.white)
-        }
-    }
-
-    private var selectedServerCard: some View {
-        Group {
+    private var nodeBlock: some View {
+        VStack(spacing: 0) {
             if let config = viewModel.selectedConfig {
-                HStack(spacing: 14) {
-                    let location = ServerLocation.inferLocation(from: config.peer.endpoint)
-                    Text(location.flag)
-                        .font(.title)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(config.name)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.white)
-                        Text(config.peer.endpointHost)
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.4))
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.3))
-                }
-                .padding(16)
-                .background(Color.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                let location = ServerLocation.inferLocation(from: config.peer.endpoint)
+                specRow(label: "NODE ASSIGNED", value: config.name.uppercased())
+                specRow(label: "LOCATION", value: location.name)
+                specRow(label: "ENDPOINT", value: config.peer.endpointHost.uppercased())
+                specRow(label: "PORT", value: config.peer.endpointPort)
             } else {
                 HStack {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
-                    Text("Import a config to get started")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.6))
+                    Text("NO NODE ASSIGNED")
+                        .font(MaurtenFont.mono)
+                        .foregroundStyle(.black.opacity(0.4))
+                    Spacer()
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity)
-                .background(Color.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
             }
         }
+    }
+
+    private var sessionBlock: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("SESSION DATA")
+                    .font(MaurtenFont.monoLabel)
+                    .foregroundStyle(.black)
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+
+            specRow(label: "BYTES RECV", value: viewModel.stats.formattedBytesReceived.uppercased())
+            specRow(label: "BYTES SENT", value: viewModel.stats.formattedBytesSent.uppercased())
+            specRow(label: "ELAPSED", value: viewModel.stats.formattedDuration)
+        }
+    }
+
+    private func specRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(MaurtenFont.mono)
+                .foregroundStyle(.black.opacity(0.5))
+            Spacer()
+            Text(value)
+                .font(MaurtenFont.mono)
+                .foregroundStyle(.black)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
     }
 
     private var connectButton: some View {
         Button(action: viewModel.toggleConnection) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 if viewModel.connectionState.isTransitioning {
                     ProgressView()
                         .tint(.white)
-                        .scaleEffect(0.8)
-                } else {
-                    Image(systemName: viewModel.connectionState.isActive ? "stop.fill" : "power")
+                        .scaleEffect(0.7)
                 }
-
                 Text(buttonTitle)
-                    .font(.headline)
+                    .font(MaurtenFont.monoButton)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 54)
-            .background(buttonGradient)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: buttonShadow.opacity(0.3), radius: 12, y: 6)
+            .frame(height: 52)
+            .background(Color.black)
+            .clipShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .disabled(!viewModel.hasConfigs || viewModel.connectionState.isTransitioning)
-        .opacity(viewModel.hasConfigs ? 1.0 : 0.5)
-        .animation(.easeInOut(duration: 0.3), value: viewModel.connectionState)
+        .opacity(viewModel.hasConfigs ? 1.0 : 0.3)
     }
 
     private var buttonTitle: String {
         switch viewModel.connectionState {
-        case .connected: return "Disconnect"
-        case .connecting: return "Connecting..."
-        case .disconnecting: return "Disconnecting..."
-        case .reasserting: return "Reconnecting..."
-        default: return "Connect"
+        case .connected: return "DISCONNECT"
+        case .connecting: return "CONNECTING"
+        case .disconnecting: return "TERMINATING"
+        case .reasserting: return "REASSERTING"
+        default: return "CONNECT"
         }
     }
 
-    private var buttonGradient: LinearGradient {
-        if viewModel.connectionState.isActive {
-            return LinearGradient(
-                colors: [.red.opacity(0.8), .red.opacity(0.6)],
-                startPoint: .leading, endPoint: .trailing
-            )
-        }
-        return LinearGradient(
-            colors: [Color.accentGreen, Color.accentGreen.opacity(0.8)],
-            startPoint: .leading, endPoint: .trailing
-        )
-    }
-
-    private var buttonShadow: Color {
-        viewModel.connectionState.isActive ? .red : .accentGreen
+    private var divider: some View {
+        Rectangle()
+            .fill(Color.black)
+            .frame(height: 1)
+            .frame(maxWidth: .infinity)
     }
 }

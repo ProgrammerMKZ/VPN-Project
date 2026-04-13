@@ -2,15 +2,15 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var viewModel: VPNViewModel
-    @State private var showConfigDetail = false
     @State private var selectedDetailConfig: AmneziaWGConfig?
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.darkBackground.ignoresSafeArea()
+        VStack(spacing: 0) {
+            header
+            divider
 
-                List {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
                     if let config = viewModel.selectedConfig {
                         activeConfigSection(config)
                     }
@@ -18,93 +18,111 @@ struct SettingsView: View {
                     connectionSection
                     aboutSection
                 }
-                .iOSInsetGroupedList()
-                .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Settings")
-            .iOSNavigationBarLarge()
-            .sheet(item: $selectedDetailConfig) { config in
-                ConfigDetailView(config: config)
-            }
+        }
+        .background(Color.white)
+        .sheet(item: $selectedDetailConfig) { config in
+            ConfigDetailView(config: config)
         }
     }
 
+    private var header: some View {
+        HStack {
+            Text("CONFIGURATION")
+                .font(MaurtenFont.monoLabel)
+                .foregroundStyle(.black)
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
+    }
+
     private func activeConfigSection(_ config: AmneziaWGConfig) -> some View {
-        Section {
-            settingsRow(icon: "server.rack", title: "Server", value: config.peer.endpointHost)
-            settingsRow(icon: "network", title: "VPN Address", value: config.interface.address)
-            settingsRow(icon: "globe", title: "DNS", value: config.interface.dns)
-            settingsRow(icon: "number", title: "Port", value: config.peer.endpointPort)
+        VStack(spacing: 0) {
+            sectionTitle("ACTIVE NODE")
+            specRow(label: "SERVER", value: config.peer.endpointHost.uppercased())
+            specRow(label: "VPN ADDRESS", value: config.interface.address.uppercased())
+            specRow(label: "DNS", value: config.interface.dns)
+            specRow(label: "PORT", value: config.peer.endpointPort)
 
             Button {
                 selectedDetailConfig = config
             } label: {
                 HStack {
-                    Label("View Full Config", systemImage: "doc.text.magnifyingglass")
-                        .foregroundStyle(.white)
+                    Text("VIEW FULL CONFIG")
+                        .font(MaurtenFont.mono)
+                        .foregroundStyle(.black)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.3))
+                    Text(">")
+                        .font(MaurtenFont.mono)
+                        .foregroundStyle(.black.opacity(0.3))
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 10)
             }
-        } header: {
-            Text("Active Configuration")
-                .foregroundStyle(.white.opacity(0.5))
+            .buttonStyle(.plain)
+
+            divider
         }
-        .listRowBackground(Color.cardBackground)
     }
 
     private var connectionSection: some View {
-        Section {
-            settingsRow(icon: "shield.checkered", title: "Protocol", value: "AmneziaWG")
-            settingsRow(icon: "eye.slash", title: "Obfuscation", value: "Enabled")
-            settingsRow(icon: "arrow.triangle.2.circlepath", title: "Kill Switch", value: "System")
-            settingsRow(icon: "wifi.exclamationmark", title: "Auto-Connect", value: "Off")
-        } header: {
-            Text("Connection")
-                .foregroundStyle(.white.opacity(0.5))
+        VStack(spacing: 0) {
+            sectionTitle("PROTOCOL PARAMETERS")
+            specRow(label: "PROTOCOL", value: "AMNEZIAWG")
+            specRow(label: "OBFUSCATION", value: "ENABLED")
+            specRow(label: "KILL SWITCH", value: "SYSTEM")
+            specRow(label: "AUTO-CONNECT", value: "OFF")
+            divider
         }
-        .listRowBackground(Color.cardBackground)
     }
 
     private var aboutSection: some View {
-        Section {
-            settingsRow(icon: "info.circle", title: "Version", value: appVersion)
-            settingsRow(icon: "lock.shield", title: "Privacy", value: "No Logs")
-
-            Link(destination: URL(string: "https://github.com/amnezia-vpn")!) {
-                HStack {
-                    Label("Source Code", systemImage: "chevron.left.forwardslash.chevron.right")
-                        .foregroundStyle(.white)
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.3))
-                }
-            }
-        } header: {
-            Text("About")
-                .foregroundStyle(.white.opacity(0.5))
+        VStack(spacing: 0) {
+            sectionTitle("SYSTEM")
+            specRow(label: "VERSION", value: appVersion.uppercased())
+            specRow(label: "PRIVACY", value: "NO LOGS")
+            specRow(label: "LICENSE", value: "OPEN SOURCE")
         }
-        .listRowBackground(Color.cardBackground)
     }
 
-    private func settingsRow(icon: String, title: String, value: String) -> some View {
+    private func sectionTitle(_ title: String) -> some View {
         HStack {
-            Label(title, systemImage: icon)
-                .foregroundStyle(.white)
+            Text(title)
+                .font(MaurtenFont.monoLabel)
+                .foregroundStyle(.black)
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 24)
+        .padding(.bottom, 8)
+    }
+
+    private func specRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(MaurtenFont.mono)
+                .foregroundStyle(.black.opacity(0.5))
             Spacer()
             Text(value)
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.4))
+                .font(MaurtenFont.mono)
+                .foregroundStyle(.black)
         }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
     }
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(Color.black)
+            .frame(height: 1)
+            .frame(maxWidth: .infinity)
     }
 }
 
@@ -113,57 +131,90 @@ struct ConfigDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.darkBackground.ignoresSafeArea()
+        VStack(spacing: 0) {
+            detailHeader
+            detailDivider
 
-                List {
-                    Section("Interface") {
-                        detailRow("Address", config.interface.address)
-                        detailRow("DNS", config.interface.dns)
-                        detailRow("Jc", "\(config.interface.jc)")
-                        detailRow("Jmin", "\(config.interface.jmin)")
-                        detailRow("Jmax", "\(config.interface.jmax)")
-                        detailRow("S1", "\(config.interface.s1)")
-                        detailRow("S2", "\(config.interface.s2)")
-                        detailRow("H1", "\(config.interface.h1)")
-                        detailRow("H2", "\(config.interface.h2)")
-                        detailRow("H3", "\(config.interface.h3)")
-                        detailRow("H4", "\(config.interface.h4)")
-                    }
-                    .listRowBackground(Color.cardBackground)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    sectionTitle("INTERFACE")
+                    detailRow("ADDRESS", config.interface.address)
+                    detailRow("DNS", config.interface.dns)
+                    detailRow("JC", "\(config.interface.jc)")
+                    detailRow("JMIN", "\(config.interface.jmin)")
+                    detailRow("JMAX", "\(config.interface.jmax)")
+                    detailRow("S1", "\(config.interface.s1)")
+                    detailRow("S2", "\(config.interface.s2)")
+                    detailRow("H1", "\(config.interface.h1)")
+                    detailRow("H2", "\(config.interface.h2)")
+                    detailRow("H3", "\(config.interface.h3)")
+                    detailRow("H4", "\(config.interface.h4)")
+                    detailDivider
 
-                    Section("Peer") {
-                        detailRow("Endpoint", config.peer.endpoint)
-                        detailRow("Allowed IPs", config.peer.allowedIPs)
-                        detailRow("Keepalive", "\(config.peer.persistentKeepalive)s")
-                        detailRow("PSK", config.peer.presharedKey != nil ? "Set" : "None")
-                    }
-                    .listRowBackground(Color.cardBackground)
-                }
-                .iOSInsetGroupedList()
-                .scrollContentBackground(.hidden)
-            }
-            .navigationTitle(config.name)
-            .iOSNavigationBarInline()
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    sectionTitle("PEER")
+                    detailRow("ENDPOINT", config.peer.endpoint)
+                    detailRow("ALLOWED IPS", config.peer.allowedIPs)
+                    detailRow("KEEPALIVE", "\(config.peer.persistentKeepalive)S")
+                    detailRow("PSK", config.peer.presharedKey != nil ? "KEY ISSUED" : "NONE")
                 }
             }
         }
+        .background(Color.white)
+    }
+
+    private var detailHeader: some View {
+        HStack {
+            Text(config.name.uppercased())
+                .font(MaurtenFont.monoLabel)
+                .foregroundStyle(.black)
+
+            Spacer()
+
+            Button {
+                dismiss()
+            } label: {
+                Text("DONE")
+                    .font(MaurtenFont.monoSmall)
+                    .foregroundStyle(.black)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
+    }
+
+    private func sectionTitle(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(MaurtenFont.monoLabel)
+                .foregroundStyle(.black)
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 24)
+        .padding(.bottom, 8)
     }
 
     private func detailRow(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)
-                .foregroundStyle(.white.opacity(0.6))
+                .font(MaurtenFont.mono)
+                .foregroundStyle(.black.opacity(0.5))
             Spacer()
-            Text(value)
-                .font(.system(.subheadline, design: .monospaced))
-                .foregroundStyle(.white)
+            Text(value.uppercased())
+                .font(MaurtenFont.mono)
+                .foregroundStyle(.black)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 6)
+    }
+
+    private var detailDivider: some View {
+        Rectangle()
+            .fill(Color.black)
+            .frame(height: 1)
+            .frame(maxWidth: .infinity)
     }
 }

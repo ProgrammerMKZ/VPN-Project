@@ -8,7 +8,7 @@ struct PhantomVPNApp: App {
         WindowGroup {
             MainView()
                 .environmentObject(viewModel)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(.light)
         }
     }
 }

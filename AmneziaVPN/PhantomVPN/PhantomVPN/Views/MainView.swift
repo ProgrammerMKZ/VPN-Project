@@ -4,42 +4,73 @@ struct MainView: View {
     @EnvironmentObject var viewModel: VPNViewModel
     @State private var selectedTab: Tab = .home
 
-    enum Tab {
-        case home, servers, settings
+    enum Tab: String, CaseIterable {
+        case home = "STATUS"
+        case servers = "NODES"
+        case settings = "CONFIG"
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            HomeView()
-                .tabItem {
-                    Label("Connect", systemImage: "shield.checkered")
-                }
-                .tag(Tab.home)
+        VStack(spacing: 0) {
+            selectedView
 
-            ServerListView()
-                .tabItem {
-                    Label("Servers", systemImage: "server.rack")
-                }
-                .tag(Tab.servers)
+            Divider()
+                .frame(height: 1)
+                .overlay(Color.black)
 
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
-                }
-                .tag(Tab.settings)
+            tabBar
         }
-        .tint(.accentGreen)
-        .alert("Error", isPresented: $viewModel.showError) {
-            Button("OK") {}
+        .background(Color.white)
+        .alert("ERROR", isPresented: $viewModel.showError) {
+            Button("DISMISS") {}
         } message: {
-            Text(viewModel.errorMessage)
+            Text(viewModel.errorMessage.uppercased())
+                .font(MaurtenFont.mono)
         }
+    }
+
+    @ViewBuilder
+    private var selectedView: some View {
+        switch selectedTab {
+        case .home:
+            HomeView()
+        case .servers:
+            ServerListView()
+        case .settings:
+            SettingsView()
+        }
+    }
+
+    private var tabBar: some View {
+        HStack(spacing: 0) {
+            ForEach(Tab.allCases, id: \.self) { tab in
+                Button {
+                    selectedTab = tab
+                } label: {
+                    Text(tab.rawValue)
+                        .font(MaurtenFont.monoSmall)
+                        .foregroundStyle(selectedTab == tab ? Color.white : Color.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(selectedTab == tab ? Color.black : Color.white)
+                }
+                .buttonStyle(.plain)
+
+                if tab != Tab.allCases.last {
+                    Rectangle()
+                        .fill(Color.black)
+                        .frame(width: 1)
+                        .frame(height: 48)
+                }
+            }
+        }
+        .frame(height: 48)
     }
 }
 
 extension Color {
-    static let accentGreen = Color(red: 0.18, green: 0.80, blue: 0.44)
-    static let darkBackground = Color(red: 0.06, green: 0.07, blue: 0.11)
-    static let cardBackground = Color(red: 0.10, green: 0.11, blue: 0.16)
-    static let subtleGray = Color(red: 0.40, green: 0.42, blue: 0.48)
+    static let accentGreen = Color.black
+    static let darkBackground = Color.white
+    static let cardBackground = Color.white
+    static let subtleGray = Color.black.opacity(0.4)
 }

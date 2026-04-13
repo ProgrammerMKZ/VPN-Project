@@ -8,6 +8,7 @@ struct AmneziaVPNApp: App {
         WindowGroup {
             MainView()
                 .environmentObject(viewModel)
+                .preferredColorScheme(.light)
         }
     }
 }

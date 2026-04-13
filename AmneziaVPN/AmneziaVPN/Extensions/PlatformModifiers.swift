@@ -6,7 +6,7 @@ extension View {
         #if os(iOS)
         self
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarColorScheme(.light, for: .navigationBar)
         #else
         self
         #endif
@@ -16,8 +16,8 @@ extension View {
     func iOSNavigationBarLarge() -> some View {
         #if os(iOS)
         self
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.light, for: .navigationBar)
         #else
         self
         #endif
@@ -26,7 +26,7 @@ extension View {
     @ViewBuilder
     func iOSInsetGroupedList() -> some View {
         #if os(iOS)
-        self.listStyle(.insetGrouped)
+        self.listStyle(.plain)
         #else
         self.listStyle(.sidebar)
         #endif
