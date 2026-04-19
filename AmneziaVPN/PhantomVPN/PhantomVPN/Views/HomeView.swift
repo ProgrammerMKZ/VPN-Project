@@ -3,175 +3,253 @@ import UniformTypeIdentifiers
 
 struct HomeView: View {
     @EnvironmentObject var viewModel: VPNViewModel
+    @State private var pulseAnimation = false
+
+    private let mono = Font.custom("Courier New", size: 13)
+    private let monoSmall = Font.custom("Courier New", size: 11)
+    private let monoTitle = Font.custom("Courier New", size: 18)
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            divider
+        NavigationStack {
+            ZStack {
+                Color.darkBackground.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    statusBlock
-                    divider
-                    nodeBlock
-                    divider
+                VStack(spacing: 32) {
+                    Spacer()
+
+                    connectionOrb
+
+                    statusLabel
 
                     if viewModel.connectionState == .connected {
-                        sessionBlock
-                        divider
+                        statsCard
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
 
-                    Spacer(minLength: 24)
+                    Spacer()
+
+                    selectedServerCard
 
                     connectButton
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 24)
-                }
-            }
-        }
-        .background(Color.white)
-        .fileImporter(
-            isPresented: $viewModel.isImporting,
-            allowedContentTypes: [.init(filenameExtension: "conf")!],
-            allowsMultipleSelection: false
-        ) { result in
-            if case .success(let urls) = result, let url = urls.first {
-                viewModel.importConfig(from: url)
-            }
-        }
-    }
-
-    private var header: some View {
-        HStack {
-            Text("PHANTOM VPN")
-                .font(MaurtenFont.monoLabel)
-                .foregroundStyle(.black)
-
-            Spacer()
-
-            Button {
-                viewModel.isImporting = true
-            } label: {
-                Text("+ IMPORT")
-                    .font(MaurtenFont.monoSmall)
-                    .foregroundStyle(.black)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
-    }
-
-    private var statusBlock: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("STATUS")
-                    .font(MaurtenFont.monoLarge)
-                    .foregroundStyle(.black)
-                Spacer()
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 24)
-            .padding(.bottom, 16)
-
-            specRow(label: "STATE", value: viewModel.connectionState.displayText)
-            specRow(label: "PROTOCOL", value: "AMNEZIAWG")
-
-            if viewModel.connectionState == .connected {
-                specRow(label: "DURATION", value: viewModel.stats.formattedDuration)
-            }
-        }
-    }
-
-    private var nodeBlock: some View {
-        VStack(spacing: 0) {
-            if let config = viewModel.selectedConfig {
-                let location = ServerLocation.inferLocation(from: config.peer.endpoint)
-                specRow(label: "NODE ASSIGNED", value: config.name.uppercased())
-                specRow(label: "LOCATION", value: location.name)
-                specRow(label: "ENDPOINT", value: config.peer.endpointHost.uppercased())
-                specRow(label: "PORT", value: config.peer.endpointPort)
-            } else {
-                HStack {
-                    Text("NO NODE ASSIGNED")
-                        .font(MaurtenFont.mono)
-                        .foregroundStyle(.black.opacity(0.4))
-                    Spacer()
+                        .padding(.bottom, 16)
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 16)
+            }
+            .navigationTitle("PHANTOMVPN")
+            .iOSNavigationBarInline()
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button {
+                        viewModel.isImporting = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(.black.opacity(0.7))
+                    }
+                }
+            }
+            .fileImporter(
+                isPresented: $viewModel.isImporting,
+                allowedContentTypes: [UTType(filenameExtension: "conf")].compactMap { $0 },
+                allowsMultipleSelection: false
+            ) { result in
+                if case .success(let urls) = result, let url = urls.first {
+                    viewModel.importConfig(from: url)
+                }
             }
         }
     }
 
-    private var sessionBlock: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("SESSION DATA")
-                    .font(MaurtenFont.monoLabel)
-                    .foregroundStyle(.black)
-                Spacer()
+    private var connectionOrb: some View {
+        ZStack {
+            if viewModel.connectionState == .connected {
+                Circle()
+                    .fill(Color.black.opacity(0.08))
+                    .frame(width: 200, height: 200)
+                    .scaleEffect(pulseAnimation ? 1.2 : 1.0)
+                    .opacity(pulseAnimation ? 0.0 : 0.6)
+                    .onAppear { pulseAnimation = true }
+                    .onDisappear { pulseAnimation = false }
+                    .animation(
+                        .easeInOut(duration: 2.0).repeatForever(autoreverses: false),
+                        value: pulseAnimation
+                    )
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-            .padding(.bottom, 8)
 
-            specRow(label: "BYTES RECV", value: viewModel.stats.formattedBytesReceived.uppercased())
-            specRow(label: "BYTES SENT", value: viewModel.stats.formattedBytesSent.uppercased())
-            specRow(label: "ELAPSED", value: viewModel.stats.formattedDuration)
+            Circle()
+                .fill(orbFill)
+                .frame(width: 160, height: 160)
+                .overlay(
+                    Circle().stroke(Color.black, lineWidth: 1)
+                )
+
+            Image(systemName: orbIcon)
+                .font(.system(size: 56, weight: .ultraLight, design: .monospaced))
+                .foregroundStyle(orbIconColor)
         }
     }
 
-    private func specRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(MaurtenFont.mono)
-                .foregroundStyle(.black.opacity(0.5))
-            Spacer()
-            Text(value)
-                .font(MaurtenFont.mono)
+    private var orbFill: Color {
+        switch viewModel.connectionState {
+        case .connected:
+            Color.black
+        case .connecting, .reasserting:
+            Color(white: 0.35)
+        default:
+            Color(white: 0.92)
+        }
+    }
+
+    private var orbIconColor: Color {
+        switch viewModel.connectionState {
+        case .connected, .connecting, .reasserting:
+            .white
+        default:
+            .black
+        }
+    }
+
+    private var orbIcon: String {
+        switch viewModel.connectionState {
+        case .connected: "lock.shield.fill"
+        case .connecting, .reasserting: "arrow.triangle.2.circlepath"
+        case .disconnecting: "xmark.shield"
+        default: "shield.slash"
+        }
+    }
+
+    private var statusLabel: some View {
+        VStack(spacing: 6) {
+            Text(viewModel.connectionState.displayText)
+                .font(monoTitle)
+                .foregroundStyle(.black)
+                .textCase(.uppercase)
+
+            if viewModel.connectionState == .connected, let config = viewModel.selectedConfig {
+                Text(config.peer.endpointHost.uppercased())
+                    .font(monoSmall)
+                    .foregroundStyle(.black.opacity(0.4))
+            }
+        }
+    }
+
+    private var statsCard: some View {
+        HStack(spacing: 24) {
+            statItem(title: "DURATION", value: viewModel.stats.formattedDuration)
+            Rectangle().fill(Color.black.opacity(0.15)).frame(width: 1, height: 32)
+            statItem(title: "DOWNLOAD", value: viewModel.stats.formattedBytesReceived)
+            Rectangle().fill(Color.black.opacity(0.15)).frame(width: 1, height: 32)
+            statItem(title: "UPLOAD", value: viewModel.stats.formattedBytesSent)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .background(Color.cardBackground)
+        .clipShape(Rectangle())
+        .overlay(
+            Rectangle().stroke(Color.black, lineWidth: 1)
+        )
+    }
+
+    private func statItem(title: String, value: String) -> some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(monoSmall)
+                .foregroundStyle(.black.opacity(0.4))
+            Text(value.uppercased())
+                .font(mono)
                 .foregroundStyle(.black)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 8)
+    }
+
+    private var selectedServerCard: some View {
+        Group {
+            if let config = viewModel.selectedConfig {
+                HStack(spacing: 14) {
+                    let location = ServerLocation.inferLocation(from: config.peer.endpoint)
+                    Text(location.flag)
+                        .font(.title)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(config.name.uppercased())
+                            .font(mono)
+                            .foregroundStyle(.black)
+                        Text(config.peer.endpointHost.uppercased())
+                            .font(monoSmall)
+                            .foregroundStyle(.black.opacity(0.4))
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.black.opacity(0.3))
+                }
+                .padding(16)
+                .background(Color.cardBackground)
+                .clipShape(Rectangle())
+                .overlay(
+                    Rectangle().stroke(Color.black, lineWidth: 1)
+                )
+            } else {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(.black.opacity(0.4))
+                    Text("IMPORT A CONFIG TO GET STARTED")
+                        .font(monoSmall)
+                        .foregroundStyle(.black.opacity(0.5))
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity)
+                .background(Color.cardBackground)
+                .clipShape(Rectangle())
+                .overlay(
+                    Rectangle().stroke(Color.black, lineWidth: 1)
+                )
+            }
+        }
     }
 
     private var connectButton: some View {
-        Button(action: viewModel.toggleConnection) {
-            HStack(spacing: 8) {
+        Button {
+            viewModel.toggleConnection()
+        } label: {
+            HStack(spacing: 10) {
                 if viewModel.connectionState.isTransitioning {
                     ProgressView()
                         .tint(.white)
-                        .scaleEffect(0.7)
+                        .scaleEffect(0.8)
+                } else {
+                    Image(systemName: viewModel.connectionState.isActive ? "stop.fill" : "power")
                 }
+
                 Text(buttonTitle)
-                    .font(MaurtenFont.monoButton)
+                    .font(Font.custom("Courier New", size: 15))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(Color.black)
+            .frame(height: 54)
+            .background(buttonColor)
             .clipShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(!viewModel.hasConfigs || viewModel.connectionState.isTransitioning)
-        .opacity(viewModel.hasConfigs ? 1.0 : 0.3)
+        .disabled(viewModel.connectionState.isTransitioning)
+        .opacity(viewModel.hasConfigs ? 1.0 : 0.5)
     }
 
     private var buttonTitle: String {
         switch viewModel.connectionState {
-        case .connected: return "DISCONNECT"
-        case .connecting: return "CONNECTING"
-        case .disconnecting: return "TERMINATING"
-        case .reasserting: return "REASSERTING"
-        default: return "CONNECT"
+        case .connected: "DISCONNECT"
+        case .connecting: "CONNECTING..."
+        case .disconnecting: "DISCONNECTING..."
+        case .reasserting: "RECONNECTING..."
+        default: "CONNECT"
         }
     }
 
-    private var divider: some View {
-        Rectangle()
-            .fill(Color.black)
-            .frame(height: 1)
-            .frame(maxWidth: .infinity)
+    private var buttonColor: Color {
+        if viewModel.connectionState.isActive {
+            Color(white: 0.25)
+        } else {
+            Color.black
+        }
     }
 }

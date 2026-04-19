@@ -4,73 +4,42 @@ struct MainView: View {
     @EnvironmentObject var viewModel: VPNViewModel
     @State private var selectedTab: Tab = .home
 
-    enum Tab: String, CaseIterable {
-        case home = "STATUS"
-        case servers = "NODES"
-        case settings = "CONFIG"
+    enum Tab {
+        case home, servers, settings
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            selectedView
-
-            Divider()
-                .frame(height: 1)
-                .overlay(Color.black)
-
-            tabBar
-        }
-        .background(Color.white)
-        .alert("ERROR", isPresented: $viewModel.showError) {
-            Button("DISMISS") {}
-        } message: {
-            Text(viewModel.errorMessage.uppercased())
-                .font(MaurtenFont.mono)
-        }
-    }
-
-    @ViewBuilder
-    private var selectedView: some View {
-        switch selectedTab {
-        case .home:
+        TabView(selection: $selectedTab) {
             HomeView()
-        case .servers:
+                .tabItem {
+                    Label("CONNECT", systemImage: "shield.checkered")
+                }
+                .tag(Tab.home)
+
             ServerListView()
-        case .settings:
+                .tabItem {
+                    Label("SERVERS", systemImage: "server.rack")
+                }
+                .tag(Tab.servers)
+
             SettingsView()
-        }
-    }
-
-    private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach(Tab.allCases, id: \.self) { tab in
-                Button {
-                    selectedTab = tab
-                } label: {
-                    Text(tab.rawValue)
-                        .font(MaurtenFont.monoSmall)
-                        .foregroundStyle(selectedTab == tab ? Color.white : Color.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(selectedTab == tab ? Color.black : Color.white)
+                .tabItem {
+                    Label("SETTINGS", systemImage: "gearshape.fill")
                 }
-                .buttonStyle(.plain)
-
-                if tab != Tab.allCases.last {
-                    Rectangle()
-                        .fill(Color.black)
-                        .frame(width: 1)
-                        .frame(height: 48)
-                }
-            }
+                .tag(Tab.settings)
         }
-        .frame(height: 48)
+        .tint(.black)
+        .alert("ERROR", isPresented: $viewModel.showError) {
+            Button("OK") {}
+        } message: {
+            Text(viewModel.errorMessage)
+        }
     }
 }
 
 extension Color {
     static let accentGreen = Color.black
     static let darkBackground = Color.white
-    static let cardBackground = Color.white
-    static let subtleGray = Color.black.opacity(0.4)
+    static let cardBackground = Color(white: 0.95)
+    static let subtleGray = Color(white: 0.55)
 }

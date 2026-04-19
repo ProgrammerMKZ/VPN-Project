@@ -1,4 +1,4 @@
-# Terraform
+# Terraform (AWS)
 terraform/.terraform/
 terraform/.terraform.lock.hcl
 terraform/*.tfstate
@@ -6,6 +6,19 @@ terraform/*.tfstate.backup
 terraform/*.tfplan
 terraform/terraform.tfvars
 terraform/.terraform.tfstate.lock.info
+
+# Terraform (Hetzner)
+terraform-hetzner/.terraform/
+terraform-hetzner/.terraform.lock.hcl
+terraform-hetzner/*.tfstate
+terraform-hetzner/*.tfstate.backup
+terraform-hetzner/*.tfplan
+terraform-hetzner/terraform.tfvars
+terraform-hetzner/.terraform.tfstate.lock.info
+
+# Hetzner runtime state and generated configs
+state/
+configs/
 
 # Lambda build artifacts
 lambda/*.zip

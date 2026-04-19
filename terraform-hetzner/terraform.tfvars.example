@@ -1,0 +1,35 @@
+# Copy this file to terraform/terraform.tfvars and fill in your values.
+# Do NOT commit terraform.tfvars — it contains your API token.
+
+# --- Required ---
+hcloud_token        = "YOUR_HETZNER_CLOUD_API_TOKEN"
+admin_cidr_blocks   = ["YOUR_IP/32"]
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+
+# --- Project ---
+project_name = "amnezia-vpn"
+
+# --- Scaling ---
+server_count       = 1
+clients_per_server = 50
+
+# --- Server ---
+server_type  = "cpx21"        # 3 vCPU AMD, 4 GB RAM, 20 TB traffic — €7.05/mo
+server_image = "ubuntu-22.04"
+location     = "fsn1"         # Falkenstein, Germany
+
+# --- VPN ---
+vpn_port    = 443
+vpn_subnet  = "10.8.0.0/24"
+dns_servers = "1.1.1.1, 1.0.0.1"
+
+# --- AmneziaWG Obfuscation ---
+awg_jc   = 4
+awg_jmin = 40
+awg_jmax = 70
+awg_s1   = 0
+awg_s2   = 0
+awg_h1   = 1
+awg_h2   = 2
+awg_h3   = 3
+awg_h4   = 4

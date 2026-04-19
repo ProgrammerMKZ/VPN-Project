@@ -10,11 +10,11 @@ enum ConnectionState: String, Equatable {
 
     var displayText: String {
         switch self {
-        case .disconnected: return "INACTIVE"
-        case .connecting: return "CONNECTING"
-        case .connected: return "SESSION ACTIVE"
-        case .disconnecting: return "TERMINATING"
-        case .reasserting: return "REASSERTING"
+        case .disconnected: return "DISCONNECTED"
+        case .connecting: return "CONNECTING..."
+        case .connected: return "CONNECTED"
+        case .disconnecting: return "DISCONNECTING..."
+        case .reasserting: return "RECONNECTING..."
         case .invalid: return "NOT CONFIGURED"
         }
     }
